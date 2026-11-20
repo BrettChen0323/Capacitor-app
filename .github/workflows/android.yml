@@ -11,6 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 整理目录（把根目录的散文件放回文件夹）
+        run: |
+          mkdir -p app www tools resources
+          if [ -f prototype.html ]; then mv prototype.html app/; fi
+          for f in index.html notify.js shell.js; do if [ -f "$f" ]; then mv "$f" www/; fi; done
+          for f in pack.js patch_android.py generate_icons.py; do if [ -f "$f" ]; then mv "$f" tools/; fi; done
+          for f in icon-*.png ic_*.png; do if [ -f "$f" ]; then mv "$f" resources/; fi; done
+          rm -f android.yml download
+          echo '--- 整理后 ---'
+          ls -1
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -23,7 +34,7 @@ jobs:
       - name: 安装依赖
         run: npm install --no-audit --no-fund
 
-      - name: 生成 www
+      - name: 生成 www（原型 + 通知脚本）
         run: npm run pack
 
       - name: 生成 Android 工程
