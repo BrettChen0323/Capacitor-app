@@ -1,7 +1,5 @@
 name: build-apk
 
-# 云端出包：不用在本机装 Node / Android Studio。
-# 触发方式：仓库页 → Actions → build-apk → Run workflow；或者 push 到 main 自动跑。
 on:
   push:
     branches: [main]
@@ -12,6 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: 整理目录（把根目录的散文件放回文件夹）
+        run: |
+          mkdir -p app www tools resources
+          if [ -f prototype.html ]; then mv prototype.html app/; fi
+          for f in index.html notify.js shell.js; do if [ -f "$f" ]; then mv "$f" www/; fi; done
+          for f in pack.js patch_android.py generate_icons.py; do if [ -f "$f" ]; then mv "$f" tools/; fi; done
+          for f in icon-*.png ic_*.png; do if [ -f "$f" ]; then mv "$f" resources/; fi; done
+          rm -f android.yml download
+          echo '--- 整理后 ---'
+          ls -1
 
       - uses: actions/setup-node@v4
         with:
