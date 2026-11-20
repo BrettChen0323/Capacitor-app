@@ -1,63 +1,93 @@
-"""生成 Capacitor 工程要用的图标（本机跑一次，产物提交进仓库）。
+"""把品牌图切成 Android / PWA 需要的所有尺寸。
 
-    resources/icon-{48,72,96,144,192}.png         普通启动图标（满幅）
-    resources/ic_launcher_foreground-{108,...,432}.png  自适应图标前景（留安全区）
-    resources/ic_stat_icon-{24,...,96}.png        通知栏小图标（纯白剪影）
-
-画的是原型里那三根柱子：电蓝 / 青 / 橙，午夜黑底。
+用法（CI 里）：icon-source.png 放在 app/ 目录，脚本从 app/icon-source.png 读；
+本地没有那张图时回退到 assets/app-icon.png；都没有就画三根柱。
 """
 import os
+import sys
+
 from PIL import Image, ImageDraw
 
-OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'resources')
-os.makedirs(OUT, exist_ok=True)
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)            # 仓库根（CI 里是 workspace，本地是 capacitor-app）
+OUT = os.path.join(ROOT, 'resources')
 
-BLUE = (74, 158, 255, 255)
-CYAN = (95, 211, 243, 255)
-ORANGE = (255, 122, 60, 255)
-BG = (9, 11, 16, 255)
+CANDIDATES = [
+    os.path.join(ROOT, 'app', 'icon-source.png'),
+    os.path.join(ROOT, 'icon-source.png'),
+    os.path.join(ROOT, '..', 'assets', 'app-icon.png'),
+]
+
+BG = (9, 11, 16)
+COLORS = [(74, 158, 255), (95, 211, 243), (255, 122, 60)]
 
 
-def bars(size, colors, pad_ratio=0.30, bg=None):
-    """在 size×size 画布上画三根圆角柱；pad_ratio = 四周留白比例。"""
-    S = size * 4  # 4 倍超采样，缩回去更干净
-    img = Image.new('RGBA', (S, S), bg if bg else (0, 0, 0, 0))
+def find_source():
+    for p in CANDIDATES:
+        p = os.path.abspath(p)
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+def fallback(size):
+    """没有品牌图时，画三根柱（原来的图标）。"""
+    img = Image.new('RGB', (size, size), BG)
     d = ImageDraw.Draw(img)
-
-    inner = S * (1 - pad_ratio * 2)
-    off = S * pad_ratio
-    gap = inner * 0.16
-    w = (inner - gap * 2) / 3
-    base = off + inner                      # 柱子底部对齐线
-    heights = [inner * 0.42, inner * 0.66, inner * 0.92]
-
-    for i, (c, h) in enumerate(zip(colors, heights)):
-        x0 = off + i * (w + gap)
-        y0 = base - h
-        d.rounded_rectangle([x0, y0, x0 + w, base], radius=w * 0.42, fill=c)
-
-    return img.resize((size, size), Image.LANCZOS)
+    pad = size * 0.18
+    inner = size - pad * 2
+    bar_w = inner * 0.19
+    gap = inner * 0.13
+    heights = [0.52, 0.72, 0.94]
+    base = (size + inner * 0.80) / 2
+    for i, h in enumerate(heights):
+        x = pad + i * (bar_w + gap)
+        top = base - inner * h * 0.80
+        d.rounded_rectangle([x, top, x + bar_w, base], radius=bar_w * 0.32, fill=COLORS[i])
+    return img
 
 
-# 1) 普通启动图标：满幅深色底 + 柱子
-for s in (48, 72, 96, 144, 192, 512):
-    bars(s, [BLUE, CYAN, ORANGE], pad_ratio=0.26, bg=BG).convert('RGB').save(
-        os.path.join(OUT, f'icon-{s}.png'))
+def stat_icon(size):
+    """通知栏小图标：白色剪影 + 透明底（系统会给它上色）。"""
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    s = size
+    w = max(1.4, s * 0.075)
+    # 一页纸 + 两条横线
+    d.rounded_rectangle([s * 0.26, s * 0.16, s * 0.74, s * 0.84],
+                        radius=s * 0.10, outline=(255, 255, 255, 255), width=int(round(w)))
+    d.rounded_rectangle([s * 0.38, s * 0.40, s * 0.62, s * 0.40 + max(1, s * 0.07)],
+                        radius=s * 0.03, fill=(255, 255, 255, 255))
+    d.rounded_rectangle([s * 0.38, s * 0.58, s * 0.55, s * 0.58 + max(1, s * 0.07)],
+                        radius=s * 0.03, fill=(255, 255, 255, 255))
+    return img
 
-# 2) 自适应图标前景：透明底，图缩到中间 62%，四周是安全区
-for s in (108, 162, 216, 324, 432):
-    glyph = bars(s, [BLUE, CYAN, ORANGE], pad_ratio=0.06)
-    canvas = Image.new('RGBA', (s, s), (0, 0, 0, 0))
-    inner = int(s * 0.62)
-    canvas.paste(glyph.resize((inner, inner), Image.LANCZOS),
-                 ((s - inner) // 2, (s - inner) // 2), glyph.resize((inner, inner), Image.LANCZOS))
-    canvas.save(os.path.join(OUT, f'ic_launcher_foreground-{s}.png'))
 
-# 3) 通知栏小图标：纯白剪影（系统会自己上色）
-for s in (24, 36, 48, 72, 96):
-    white = bars(s, [(255, 255, 255, 255)] * 3, pad_ratio=0.10)
-    white.save(os.path.join(OUT, f'ic_stat_icon-{s}.png'))
+def main():
+    os.makedirs(OUT, exist_ok=True)
+    src = find_source()
+    if src:
+        base = Image.open(src).convert('RGB')
+        print('品牌图：', src, base.size)
+    else:
+        base = None
+        print('没找到品牌图，用三根柱兜底')
 
-print('icons →', OUT)
-for f in sorted(os.listdir(OUT)):
-    print('  ', f, os.path.getsize(os.path.join(OUT, f)), 'bytes')
+    for s in (48, 72, 96, 144, 192, 512):
+        img = base.resize((s, s), Image.LANCZOS) if base else fallback(s)
+        img.save(os.path.join(OUT, 'icon-%d.png' % s), 'PNG')
+
+    # Android 自适应图标的前景层：整图铺满，靠系统遮罩裁圆
+    for s in (108, 162, 216, 324, 432):
+        img = base.resize((s, s), Image.LANCZOS) if base else fallback(s)
+        img.save(os.path.join(OUT, 'ic_launcher_foreground-%d.png' % s), 'PNG')
+
+    for s in (24, 36, 48, 72, 96):
+        stat_icon(s).save(os.path.join(OUT, 'ic_stat_icon-%d.png' % s), 'PNG')
+
+    names = sorted(os.listdir(OUT))
+    print('写了 %d 个文件：%s' % (len(names), ', '.join(names[:6]) + ' ...'))
+
+
+if __name__ == '__main__':
+    sys.exit(main())

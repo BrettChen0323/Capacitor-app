@@ -2354,7 +2354,39 @@ input[type="range"]::-moz-range-thumb{
 .task.pressing .task-face{transform:scale(.982);border-color:rgba(255,255,255,.16)}
 
 /* 资料页拿到焦点是为了读屏，但不该画出整块面板的焦点框 */
-#detail:focus,#detail:focus-visible{outline:none}</style>
+#detail:focus,#detail:focus-visible{outline:none}
+/* ── 外观面板里的「图标」区块 ── */
+.icon-sec{margin-bottom:16px}
+.icon-head{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
+.icon-head b{font-size:13px;font-weight:600;color:var(--ink)}
+.icon-head i{font-size:10.5px;color:var(--faint);font-style:normal;line-height:1.35}
+.icon-row{display:flex;gap:9px}
+.icon-sw{
+  position:relative;flex:0 0 auto;width:56px;height:56px;border-radius:16px;
+  background-color:#141922;background-size:cover;background-position:center;
+  border:1px solid rgba(255,255,255,.12);padding:0;overflow:hidden;
+  transition:transform .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.icon-sw span{
+  position:absolute;left:0;right:0;bottom:0;padding:3px 0 3px;
+  font-size:9.5px;line-height:1.2;color:#fff;text-align:center;
+  background:linear-gradient(180deg,transparent,rgba(6,9,14,.72));
+}
+.icon-sw:active{transform:scale(.94)}
+.icon-sw[aria-pressed="true"]{
+  border-color:rgba(140,194,255,.9);
+  box-shadow:0 0 0 2px rgba(74,158,255,.35),0 10px 20px -14px rgba(74,158,255,.9);
+}
+.icon-sw-own{
+  display:flex;align-items:center;justify-content:center;
+  background-image:none;background-color:rgba(255,255,255,.04);
+  border-style:dashed;border-color:rgba(255,255,255,.18);
+}
+.icon-sw-own.own{border-style:solid;background-size:cover}
+.icon-sw-own span{position:static;background:none;color:var(--muted);font-size:10.5px;padding:0}
+.icon-sw-own.own span{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,transparent,rgba(6,9,14,.72));color:#fff;padding:3px 0}
+.icon-upload{margin-top:9px}
+</style>
 </head>
 <body>
 <div class="phone" id="phone">
@@ -2561,6 +2593,7 @@ input[type="range"]::-moz-range-thumb{
 
   <div class="toast" id="toast" role="status"></div>
   <div class="visually-hidden" id="live" aria-live="polite"></div>
+  <input type="file" id="iconFile" accept="image/*" hidden>
   <input type="file" id="bgFile" accept="image/*" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
 </div>
 
@@ -3638,6 +3671,123 @@ const BG_CFG_KEY = 'kcb.bgcfg';
 
 const bgState = { preset: 'midnight', src: '', veil: 0.62, blur: 0 };
 
+
+/* ═══════════════ 图标：预设 / 自选 / 本地持久化 ═══════════════ */
+const ICON_KEY = 'kcb.icon';
+
+const ICON_PRESETS = {
+  pink: 'data:image/png;base64,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',
+  bars: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAIAAADajyQQAAAA3klEQVR42u3asQ3CMBAF0ATRAA0MwAYMQMsSbIGYBbEFS9AyABswAB01beTYESgIxc67zj9Nnk46ybnUs8WyKrEmVaEFBgYGBgYGBgYGBgYGBgY2ath0CC/xOm6ax/npXkLHAlU0yQ+WMvS3GR5gYNmO+/3t0TxetusSOhaookl+sJThnzbDAwxsYON+d34GyfWwyr5jbVUqzAnWARigzfAAAwMDAwMDAwMDGyGs40IZPEp9QmznqY1R/03Sdx2L2qJh25DStg0/2Y/V/uIGAwMDAwMDAwMDAwMDA/ug3tgXLd3/SBGRAAAAAElFTkSuQmCC',
+  book: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAIAAADajyQQAAABBElEQVR42u3bSwrDMAxFUVt4Wuisg0D2v66A99FZZoVi6TlCXC/A7kn8eQ5qf70/rWKzVrQBAwYMGDBgwBK24e9iziv8Zx3H6eyhO7OiQhXCW4dJSX7bSDJzfj21Oa+1zhff2D1wOClqFEs7CZ0jWqoZGNg/BzQwYMCAAQNW8z7mD0GKBGMZop0ifFqGwKqwsXmIF0z4MrMM1w3F5jESXqVYY8CAAQNWJARvOAyeCcEbPrk+FoLVNjaP6DClXmbPhOANmwchmDUGDBgwYMCA5YbdqUKd0HcXsLSsRSstvEhMV0u13LmrrG/DRXj5kZUtOer+P+3UrDDlHAMGDBgwYMCA/d++mRdRMaYFfiYAAAAASUVORK5CYII='
+};
+
+const iconState = { id: 'pink', src: '' };
+
+function iconSrc() {
+  if (iconState.id === 'own' && iconState.src) return iconState.src;
+  return ICON_PRESETS[iconState.id] || ICON_PRESETS.pink;
+}
+
+/** 写进 <link rel=icon / apple-touch-icon>：Safari「添加到主屏幕」会读这个 */
+function iconApply() {
+  const src = iconSrc();
+  [['icon', ''], ['apple-touch-icon', '']].forEach(([rel]) => {
+    let l = document.querySelector('link[rel="' + rel + '"]');
+    if (!l) {
+      l = document.createElement('link');
+      l.rel = rel;
+      document.head.appendChild(l);
+    }
+    l.href = src;
+  });
+}
+
+function iconSave() {
+  try {
+    localStorage.setItem(ICON_KEY, JSON.stringify({ id: iconState.id, src: iconState.src }));
+  } catch (e) {
+    toast('这张图太大，只留在本次打开期间');
+  }
+}
+
+function iconLoad() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ICON_KEY) || 'null');
+    if (raw && typeof raw.id === 'string') {
+      iconState.id = raw.id;
+      iconState.src = raw.src || '';
+    }
+  } catch (e) { /* 忽略 */ }
+  iconApply();
+}
+
+/** 自选图：裁成正方形压到 512，控制体积 */
+function iconReadFile(file) {
+  if (!file) return;
+  if (!/^image\//.test(file.type)) { toast('请选择图片文件'); return; }
+  const url = URL.createObjectURL(file);
+  const im = new Image();
+  im.onload = () => {
+    const S = 512;
+    const side = Math.min(im.width, im.height);
+    const cv = document.createElement('canvas');
+    cv.width = S; cv.height = S;
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(im, (im.width - side) / 2, (im.height - side) / 2, side, side, 0, 0, S, S);
+    let q = 0.9;
+    let data = cv.toDataURL('image/png');
+    if (data.length > 4.2e5) data = cv.toDataURL('image/jpeg', q);
+    while (data.length > 7.4e5 && q > 0.5) {
+      q -= 0.1;
+      data = cv.toDataURL('image/jpeg', q);
+    }
+    URL.revokeObjectURL(url);
+    iconState.id = 'own';
+    iconState.src = data;
+    iconApply();
+    iconSave();
+    const own = document.querySelector('.icon-sw[data-icon="own"]');
+    if (own) {
+      own.style.backgroundImage = 'url("' + data + '")';
+      own.classList.add('own');
+    }
+    document.querySelectorAll('#sheetBody .icon-sw').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.icon === 'own')));
+    toast('图标已换好 · 重新「添加到主屏幕」才会生效');
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); toast('这张图读不出来'); };
+  im.src = url;
+}
+
+function iconBlock() {
+  const items = [
+    ['pink', '粉色'],
+    ['bars', '三柱'],
+    ['book', '书页']
+  ];
+  let row = '';
+  items.forEach(([k, label]) => {
+    row += '<button class="icon-sw" type="button" data-icon="' + k + '" aria-pressed="' +
+      String(iconState.id === k) + '" style="background-image:url(\'' + ICON_PRESETS[k] + '\')">' +
+      '<span>' + label + '</span></button>';
+  });
+  const ownStyle = iconState.id === 'own' && iconState.src
+    ? ' style="background-image:url(\'' + iconState.src + '\')"' : '';
+  row += '<button class="icon-sw icon-sw-own' + (iconState.id === 'own' && iconState.src ? ' own' : '') +
+    '" type="button" data-icon="own"' + ownStyle + ' aria-pressed="' +
+    String(iconState.id === 'own') + '"><span>' + (iconState.src ? '我的' : '我的图') + '</span></button>';
+
+  return '<div class="icon-sec">' +
+    '<div class="icon-head"><b>图标</b><i>桌面图标在「添加/安装」那一刻固定，改完要重新添加</i></div>' +
+    '<div class="icon-row">' + row + '</div>' +
+    '<button class="bg-upload icon-upload" type="button" id="iconPick">' +
+      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+      '<rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3.6"/><path d="M4.4 16.6l4.5-4.2 3.4 3.1 2.9-2.7 4.4 4"/></svg>' +
+      '用自己的图片当图标</button>' +
+    '</div>';
+}
+
+
 function bgApply() {
   const phone = $('#phone');
   const layer = $('#bgLayer');
@@ -3741,7 +3891,7 @@ function openBg() {
     '<span>' + (bgState.src ? '我的' : '我的图') + '</span></button>';
   album += '</div>';
 
-  const body = album +
+  const body = iconBlock() + album +
     '<button class="bg-upload" type="button" id="bgPick">' +
       '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
       '<rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3.6"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M4.4 16.6l4.5-4.2 3.4 3.1 2.9-2.7 4.4 4"/></svg>' +
@@ -3754,14 +3904,29 @@ function openBg() {
     '<p class="bg-note">图片会缩到长边 1400px 后再存到本机，不上传任何服务器。遮罩调低能看清照片，调高文字更清楚。</p>';
 
   openSheet({
-    title: '背景',
-    sub: '换成预设光场或你自己的照片 —— 卡片是玻璃的，会把背景透出来',
+    title: '外观',
+    sub: '图标和背景都在这里换 —— 卡片是玻璃的，会把背景透出来',
     body,
     foot: '<button class="btn btn-primary" id="bgDone">完成</button>'
   });
 
   const pick = $('#bgPick');
   pick.onclick = () => $('#bgFile').click();
+
+  const ipick = $('#iconPick');
+  if (ipick) ipick.onclick = () => $('#iconFile').click();
+
+  $$('#sheetBody .icon-sw').forEach(b => {
+    b.onclick = () => {
+      const k = b.dataset.icon;
+      if (k === 'own' && !iconState.src) { toast('先点下面的按钮选一张图'); return; }
+      $$('#sheetBody .icon-sw').forEach(x => x.setAttribute('aria-pressed', 'false'));
+      b.setAttribute('aria-pressed', 'true');
+      iconState.id = k;
+      iconApply();
+      iconSave();
+    };
+  });
 
   $$('#sheetBody .bg-sw').forEach(b => {
     b.onclick = () => {
@@ -3829,6 +3994,11 @@ function bgWireDrop() {
 $('#bgFile').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
   if (f) bgReadFile(f);
+  e.target.value = '';
+});
+$('#iconFile').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  if (f) iconReadFile(f);
   e.target.value = '';
 });
 $('#qbtnBg').addEventListener('click', () => { qWake(); openBg(); });
@@ -4711,6 +4881,7 @@ $('#week').addEventListener('click', e => {
 function init() {
   loadState();
   bgLoad();
+  iconLoad();
   tickClock();
   setInterval(tickClock, 10000);
   renderCourseAll();
