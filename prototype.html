@@ -2176,6 +2176,216 @@ input[type="range"]::-moz-range-thumb{
 @media (prefers-reduced-motion: reduce){
   .task.landed .task-face{animation:none}
 }
+
+/* ═══════════════════════════════════════════════════
+   v2：空状态 / 账本卡片化 / 长按菜单 / 课程编辑
+   ═══════════════════════════════════════════════════ */
+
+/* ── 通用空状态 ── */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:34px 22px 30px;text-align:center;
+  border-radius:20px;
+  background:
+    radial-gradient(120% 90% at 50% -30%, rgba(255,255,255,.05), transparent 62%),
+    rgba(255,255,255,.022);
+  border:1px solid rgba(255,255,255,.06);
+}
+.empty-state > svg{width:30px;height:30px;color:var(--faint);margin-bottom:2px}
+.empty-state b{font-size:16px;font-weight:600;letter-spacing:-.015em;line-height:1.35}
+.empty-state span{font-size:12.5px;color:var(--muted);line-height:1.6;max-width:262px;text-wrap:pretty}
+.empty-state .es-acts{display:flex;gap:8px;margin-top:12px}
+.empty-state .btn{min-height:40px;padding:0 16px;font-size:13px}
+
+/* 今日课程卡堆里的空态 */
+.deck-empty b{font-size:14px}
+.deck-empty span{font-size:12px;color:var(--muted);margin-top:3px;display:block;line-height:1.5}
+.deck-empty .de-acts{display:flex;gap:8px;margin-top:13px}
+.deck-empty .btn{min-height:38px;padding:0 15px;font-size:12.5px}
+
+/* ── 周次标记 ── */
+.wk-badge{
+  flex:0 0 auto;font-size:11px;font-weight:500;color:var(--ink2);
+  padding:4px 9px;border-radius:99px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);
+  font-variant-numeric:tabular-nums;
+}
+.gcell.offweek{opacity:.45}
+.gcell.offweek::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 1px,transparent 1px 5px);
+  pointer-events:none;
+}
+
+/* ── 账本：每条一张独立玻璃卡 ── */
+#txList{display:flex;flex-direction:column;gap:9px}
+#txList .empty-state{margin-top:4px}
+.tx-day{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  margin:8px 2px 1px;font-size:11.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.tx-day:first-child{margin-top:0}
+.tx-day b{font-weight:500;color:var(--faint);font-size:11px}
+
+.tx-card{
+  position:relative;display:flex;align-items:center;gap:11px;
+  padding:12px 14px;border-radius:16px;
+  background:
+    radial-gradient(120% 80% at 4% -40%, rgba(255,255,255,.12), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012)),
+    rgba(20,24,33,.72);
+  -webkit-backdrop-filter:blur(20px) saturate(1.5);
+  backdrop-filter:blur(20px) saturate(1.5);
+  border:1px solid rgba(255,255,255,.075);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 14px 30px -24px rgba(0,0,0,.9);
+  transition:transform .18s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
+  -webkit-user-select:none;user-select:none;
+  touch-action:pan-y;
+}
+.tx-card:active{transform:scale(.982)}
+.tx-card.pressing{
+  transform:scale(.972);
+  border-color:rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 18px 34px -22px rgba(0,0,0,.95);
+}
+.tx-card.removing{transform:translateX(-26px) scale(.96);opacity:0;transition:all .24s var(--ease)}
+.tx-card .tx-name{font-size:14px;font-weight:500;letter-spacing:-.01em}
+.tx-card .tx-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.tx-card .tx-amt{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tx-card .tx-amt.up{color:var(--blue-ink)}
+
+/* ── 长按弹出的操作气泡（带回弹） ── */
+.tx-menu{
+  position:absolute;z-index:92;display:flex;gap:6px;padding:7px;
+  border-radius:17px;
+  background:
+    radial-gradient(120% 90% at 10% -40%, rgba(255,255,255,.16), transparent 60%),
+    rgba(26,31,42,.9);
+  -webkit-backdrop-filter:blur(26px) saturate(1.9);
+  backdrop-filter:blur(26px) saturate(1.9);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 20px 40px -22px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.2);
+  transform-origin:50% 100%;
+  opacity:0;pointer-events:none;
+}
+.tx-menu.on{opacity:1;pointer-events:auto;animation:menuPop .46s cubic-bezier(.34,1.56,.5,1) both}
+.tx-menu.out{animation:menuOut .18s var(--ease) both}
+@keyframes menuPop{
+  0%{transform:translateY(9px) scale(.72);opacity:0}
+  58%{transform:translateY(-4px) scale(1.055);opacity:1}
+  78%{transform:translateY(1.5px) scale(.982)}
+  100%{transform:translateY(0) scale(1);opacity:1}
+}
+@keyframes menuOut{to{transform:translateY(5px) scale(.9);opacity:0}}
+.tx-menu button{
+  display:flex;align-items:center;gap:6px;height:38px;padding:0 13px;
+  border-radius:12px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.05);color:var(--ink);
+  font-size:12.5px;font-weight:500;white-space:nowrap;
+  transition:transform .16s var(--ease), background .18s var(--ease);
+}
+.tx-menu button svg{width:15px;height:15px;flex:0 0 auto}
+.tx-menu button:active{transform:scale(.94);background:rgba(255,255,255,.1)}
+.tx-menu button[data-act="tx-del"]{color:#FF9285;border-color:rgba(255,98,71,.22);background:rgba(255,98,71,.1)}
+.tx-menu button[data-act="tx-del"]:active{background:rgba(255,98,71,.18)}
+
+/* ── 课程资料页：可编辑字段 ── */
+.det-row-item{align-items:center}
+.det-row-item .det-input{
+  flex:1 1 auto;min-width:0;height:30px;text-align:right;font-size:13.5px;
+  font-weight:500;color:var(--ink);background:transparent;border:0;outline:none;
+  padding:0 2px;border-radius:7px;
+}
+.det-row-item .det-input:focus{background:rgba(74,158,255,.12);box-shadow:0 0 0 1px rgba(74,158,255,.42)}
+.det-edit-row{display:flex;align-items:center;gap:6px;flex:1 1 auto;justify-content:flex-end}
+.det-edit-row select,
+.det-edit-row input[type="number"]{
+  height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);color:var(--ink);font-size:12.5px;font-weight:500;
+  padding:0 8px;outline:none;text-align:center;
+  -webkit-appearance:none;appearance:none;
+}
+.det-edit-row input[type="number"]{width:52px;font-variant-numeric:tabular-nums}
+.det-edit-row em{font-style:normal;color:var(--muted);font-size:12px}
+.det-edit-row select:focus,
+.det-edit-row input:focus{border-color:rgba(74,158,255,.5);background:rgba(74,158,255,.12)}
+.det-textarea{
+  width:100%;min-height:88px;resize:none;line-height:1.62;
+  font:inherit;font-size:13px;color:var(--ink2);
+  padding:12px 13px;border-radius:14px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.075);
+  outline:none;
+}
+.det-textarea:focus{border-color:rgba(74,158,255,.45);background:rgba(74,158,255,.07)}
+.det-del-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:13px 2px 2px;font-size:12.5px;color:var(--muted)}
+.det-del-btn{
+  height:36px;padding:0 14px;border-radius:11px;font-size:12.5px;font-weight:600;
+  color:#FF9285;background:rgba(255,98,71,.12);border:1px solid rgba(255,98,71,.24);
+}
+.det-del-btn:active{transform:scale(.95);background:rgba(255,98,71,.2)}
+
+@media (prefers-reduced-motion:reduce){
+  .tx-menu.on{animation-duration:.01ms}
+  .tx-card,.tx-menu button{transition-duration:.01ms}
+}
+
+/* sheet 里的单行输入 */
+.field{display:block}
+.field > span{display:block;font-size:11.5px;color:var(--muted);margin:0 0 7px 3px;letter-spacing:.01em}
+.ipt{
+  width:100%;height:46px;padding:0 14px;border-radius:13px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  color:var(--ink);font-size:14px;outline:none;
+}
+.ipt:focus{border-color:rgba(74,158,255,.55);background:rgba(74,158,255,.1)}
+.det-sec h3 .det-hint{font-size:11px;font-weight:400;color:var(--faint);margin-left:8px;letter-spacing:0}
+
+/* 空态里的按钮不要被 .btn 的满宽规则拉爆 */
+.de-empty-row,.es-acts,.de-acts{display:flex;gap:8px;flex-wrap:wrap}
+.de-acts .btn,.es-acts .btn{flex:0 0 auto;width:auto;min-width:0}
+/* 菜单里的危险项（删除） */
+.tx-menu button[data-danger]{color:#FF9285;border-color:rgba(255,98,71,.22);background:rgba(255,98,71,.1)}
+.tx-menu button[data-danger]:active{background:rgba(255,98,71,.18)}
+
+/* 待办长按时的按压反馈（拖动时会写行内 transform，二者不冲突） */
+.task.pressing .task-face{transform:scale(.982);border-color:rgba(255,255,255,.16)}
+
+/* 资料页拿到焦点是为了读屏，但不该画出整块面板的焦点框 */
+#detail:focus,#detail:focus-visible{outline:none}
+/* ── 外观面板里的「图标」区块 ── */
+.icon-sec{margin-bottom:16px}
+.icon-head{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
+.icon-head b{font-size:13px;font-weight:600;color:var(--ink)}
+.icon-head i{font-size:10.5px;color:var(--faint);font-style:normal;line-height:1.35}
+.icon-row{display:flex;gap:9px}
+.icon-sw{
+  position:relative;flex:0 0 auto;width:56px;height:56px;border-radius:16px;
+  background-color:#141922;background-size:cover;background-position:center;
+  border:1px solid rgba(255,255,255,.12);padding:0;overflow:hidden;
+  transition:transform .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.icon-sw span{
+  position:absolute;left:0;right:0;bottom:0;padding:3px 0 3px;
+  font-size:9.5px;line-height:1.2;color:#fff;text-align:center;
+  background:linear-gradient(180deg,transparent,rgba(6,9,14,.72));
+}
+.icon-sw:active{transform:scale(.94)}
+.icon-sw[aria-pressed="true"]{
+  border-color:rgba(140,194,255,.9);
+  box-shadow:0 0 0 2px rgba(74,158,255,.35),0 10px 20px -14px rgba(74,158,255,.9);
+}
+.icon-sw-own{
+  display:flex;align-items:center;justify-content:center;
+  background-image:none;background-color:rgba(255,255,255,.04);
+  border-style:dashed;border-color:rgba(255,255,255,.18);
+}
+.icon-sw-own.own{border-style:solid;background-size:cover}
+.icon-sw-own span{position:static;background:none;color:var(--muted);font-size:10.5px;padding:0}
+.icon-sw-own.own span{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,transparent,rgba(6,9,14,.72));color:#fff;padding:3px 0}
+.icon-upload{margin-top:9px}
 </style>
 </head>
 <body>
@@ -2349,7 +2559,7 @@ input[type="range"]::-moz-range-thumb{
   </section>
 
   <!-- course detail card page -->
-  <section class="detail" id="detail" role="dialog" aria-modal="true" aria-label="课程资料">
+  <section class="detail" id="detail" tabindex="-1" role="dialog" aria-modal="true" aria-label="课程资料">
     <div class="det-bar" id="detBar">
       <span class="det-grab" aria-hidden="true"></span>
       <div class="det-row">
@@ -2383,6 +2593,7 @@ input[type="range"]::-moz-range-thumb{
 
   <div class="toast" id="toast" role="status"></div>
   <div class="visually-hidden" id="live" aria-live="polite"></div>
+  <input type="file" id="iconFile" accept="image/*" hidden>
   <input type="file" id="bgFile" accept="image/*" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
 </div>
 
@@ -2501,7 +2712,7 @@ const state = {
   tab: 'course',
   day: TODAY.getDay() || 7,
   turn: 0,
-  demoLive: true,
+  demoLive: false,
   remindDefault: 15,
   cat: '全部',
   openId: null,
@@ -2513,7 +2724,7 @@ let uid = 0;
 const mk = (name, day, p, room, teacher, color, remind = 15) =>
   ({ id: 'c' + (++uid), name, day, p, room, teacher, color, remind });
 
-let courses = [
+const DEMO_COURSES = [
   mk('离散数学', 1, 0, 'A301', '李明', 0),
   mk('英语视听说', 1, 1, 'B304', '王雪', 2),
   mk('数据结构', 1, 2, 'C402', '陈立', 1),
@@ -2532,8 +2743,11 @@ let courses = [
   mk('概率论', 5, 3, 'B302', '刘芳', 0)
 ];
 
-/* 待办 */
-let todos = [
+/* v2：首次安装是空课表，由用户导入或手动添加 */
+let courses = [];
+
+/* v2：首次安装没有待办 */
+const DEMO_TODOS = [
   { id: 't0', text: '交上周的实验报告', tag: '学习', due: atTime(-1, '22:00'), done: false },
   { id: 't1', text: '高数作业 · 第 3 章习题', tag: '学习', due: atTime(0, '10:00'), done: false },
   { id: 't2', text: '背 30 个单词', tag: '学习', due: atTime(0, '21:00'), done: false },
@@ -2543,6 +2757,7 @@ let todos = [
   { id: 't6', text: '物理实验报告 收尾', tag: '学习', due: atTime(4, '17:00'), done: false },
   { id: 't7', text: '退掉多买的球鞋', tag: '生活', due: atTime(8, '12:00'), done: false }
 ];
+let todos = [];
 
 /* 账本分类 */
 const CATS = [
@@ -2555,7 +2770,7 @@ const catColor = n => (CATS.find(c => c.name === n) || CATS[7]).c;
 
 /* 流水：相对今天生成，保证「今天 / 昨天」永远成立 */
 const dayAgo = n => { const d = new Date(TODAY); d.setDate(d.getDate() - n); return d; };
-const SEED_TX = [
+const DEMO_TX = [
   [0, '12:10', '餐饮', '一食堂 · 黄焖鸡', 18.5, 0],
   [0, '08:12', '交通', '地铁 2 号线', 4, 0],
   [0, '15:40', '餐饮', '瑞幸 · 生椰拿铁', 22, 0],
@@ -2580,13 +2795,14 @@ const SEED_TX = [
   [18, '13:20', '餐饮', '食堂', 14, 0]
 ];
 let txSeq = 0;
-let txs = SEED_TX.map(([d, t, cat, note, amt, inc]) => ({
-  id: 'x' + (++txSeq), date: dayAgo(d), time: t, cat, note, amt, income: !!inc
-}));
+/* v2：首次安装是空账本 */
+let txs = [];
 
 /* ═══════════════ 课程计算 ═══════════════ */
 const slotOf = c => PERIODS[c.p];
-const todays = () => courses.filter(c => c.day === state.day).sort((a, b) => a.p - b.p);
+/* 这门课在这一周是否上课（默认 1–16 周） */
+const inWeek = c => { const w = weekNo(); return (c.w0 || 1) <= w && w <= (c.w1 || 16); };
+const todays = () => courses.filter(c => c.day === state.day && inWeek(c)).sort((a, b) => a.p - b.p);
 
 /** 返回该课程的实时状态：{phase:'live'|'next', pct, remain|inMin} */
 function liveState(c) {
@@ -2646,8 +2862,13 @@ function renderDeck() {
   host.innerHTML = '';
 
   if (!list.length) {
-    host.innerHTML = '<div class="deck-empty"><b>今天没有课</b><span>去上面挑一天看看，或者导入课表</span></div>';
-    note.textContent = '今日无课';
+    host.innerHTML = `<div class="deck-empty"><b>${courses.length ? '今天没有课' : '还没有课程'}</b>
+      <span>${courses.length ? '去上面挑一天看看' : '导入课表，或者手动加一门'}</span>
+      <div class="de-acts">
+        <button type="button" class="btn btn-primary" data-act="import">导入课表</button>
+        <button type="button" class="btn btn-ghost" data-act="new-course">手动添加</button>
+      </div></div>`;
+    note.textContent = courses.length ? '今日无课' : '暂无课程';
     return;
   }
 
@@ -2836,7 +3057,7 @@ function renderGrid() {
       const col = COLORS[c.color];
       const L = liveState(c);
       const live = L && L.phase === 'live';
-      html += `<button type="button" class="gcell has${live ? ' now' : ''}" data-id="${c.id}"
+      html += `<button type="button" class="gcell has${live ? ' now' : ''}${inWeek(c) ? '' : ' offweek'}" data-id="${c.id}"
         style="--cink:${col.ink};--cc:${col.base}"
         aria-label="${esc(c.name)}，周${DAYN[d]} ${s.n} 节，${esc(c.room)}。查看课程摘要">
         <b>${esc(c.name)}</b><span>${esc(c.room)}</span></button>`;
@@ -2860,7 +3081,7 @@ function openPop(c, anchor) {
   pop.innerHTML = `
     <div class="pop-top"><b>${esc(c.name)}</b><i class="pop-dot" style="--cc:${col.base}"></i></div>
     <div class="pop-meta">${s.n} 节 · ${hhmm(s.start)}–${hhmm(s.end)}<br>${esc(c.room)} · ${esc(c.teacher)}<br>
-      <em>提前 ${c.remind} 分钟提醒</em></div>
+      第 ${c.w0 || 1}–${c.w1 || 16} 周<br><em>提前 ${c.remind} 分钟提醒</em></div>
     <div class="pop-acts"><button type="button" data-act="detail">查看资料</button><button type="button" data-act="close">关闭</button></div>`;
   pop.dataset.id = c.id;
   pop.classList.add('on');
@@ -2984,7 +3205,7 @@ function toast(msg, opts) {
     t.appendChild(b);
   }
   t.classList.add('on');
-  toastTimer = setTimeout(() => t.classList.remove('on'), act ? 5600 : 2400);
+  toastTimer = setTimeout(() => t.classList.remove('on'), act ? 3000 : 2200);
 }
 
 /* ═══════════════ 待办 ═══════════════ */
@@ -3029,9 +3250,11 @@ function todoHeader() {
   const left = t.filter(x => !x.done).length;
   $('#todoPct').textContent = `${doneToday} / ${t.length}`;
   $('#todoBar').style.width = (t.length ? doneToday / t.length * 100 : 0) + '%';
-  $('#todoLine').textContent = left
-    ? `今天还剩 ${left} 件`
-    : '今天清空了';
+  $('#todoLine').textContent = !todos.length
+    ? '还没有待办'
+    : left
+      ? `今天还剩 ${left} 件`
+      : '今天清空了';
 }
 
 const GROUPS = [
@@ -3044,6 +3267,18 @@ const GROUPS = [
 
 function renderTodos() {
   todoHeader();
+  if (!todos.length) {
+    $('#todoGroups').innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="4.4" width="16" height="15.2" rx="4.2"/><path d="M8 9.4h8M8 13h5.2"/></svg>
+      <b>还没有待办</b>
+      <span>写下要做的事，设好时间，到点它会提醒你</span>
+      <div class="es-acts"><button type="button" class="btn btn-primary" data-act="empty-add">新建一件待办</button></div>
+    </div>`;
+    saveState();
+    return;
+  }
   let html = '';
   GROUPS.forEach(([key, title, empty]) => {
     const items = todos.filter(x => todoBucket(x) === key);
@@ -3278,6 +3513,7 @@ function renderCats() {
   const byCat = {};
   ex.forEach(t => { byCat[t.cat] = (byCat[t.cat] || 0) + t.amt; });
   const list = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  if (!list.length) { $('#cats').innerHTML = '<p class="empty" style="grid-column:1/-1;padding:6px 2px">还没有支出记录</p>'; return; }
   $('#cats').innerHTML = list.map(([name, amt]) =>
     `<div class="cat"><u style="--cink:${catColor(name)}"></u><span>${esc(name)}</span>
       <b style="--cink:${catColor(name)}">${money(amt)}</b></div>`).join('');
@@ -3303,7 +3539,16 @@ function renderTxList() {
     .sort((a, b) => (b.date - a.date) || (b.time > a.time ? 1 : -1));
   const host = $('#txList');
   if (!list.length) {
-    host.innerHTML = '<p class="empty">这个分类还没有记录</p>';
+    const none = !txs.length;
+    host.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 3.6h12a1.4 1.4 0 0 1 1.4 1.4v14a1.4 1.4 0 0 1-1.4 1.4H6a1.4 1.4 0 0 1-1.4-1.4V5A1.4 1.4 0 0 1 6 3.6z"/>
+        <path d="M8.4 8h7.2M8.4 11.6h7.2M8.4 15.2h4"/></svg>
+      <b>${none ? '还没有记一笔' : '这个分类是空的'}</b>
+      <span>${none ? '今天花了多少？记下来才看得见' : '换个分类看看，或者记一笔新的'}</span>
+      <div class="es-acts"><button type="button" class="btn btn-primary" data-act="add-tx">记一笔</button></div>
+    </div>`;
     return;
   }
   const groups = [];
@@ -3318,9 +3563,10 @@ function renderTxList() {
     const inc = g.items.filter(t => t.income).reduce((s, t) => s + t.amt, 0);
     const total = `${out ? '− ¥' + money(out) : ''}${out && inc ? ' · ' : ''}${inc ? '+ ¥' + money(inc) : ''}`;
     return `<div class="tx-day"><span>${dateLabel(g.d)}</span><b>${total}</b></div>
-      ${g.items.map(t => `
-        <div class="tx">
-          <span class="tx-ic${t.income ? ' inc' : ''}" style="${t.income ? '' : 'background:rgba(255,255,255,.05);color:' + catColor(t.cat)}">
+      ${g.items.map(t => `<!-- 长按弹出重命名 / 删除 -->
+        <div class="tx-card" data-tx="${t.id}" role="button" tabindex="0"
+          aria-label="${esc(t.note)} ${t.income ? '收入' : '支出'} ${money(t.amt)} 元，长按可重命名或删除">
+          <span class="tx-ic${t.income ? ' inc' : ''}" style="${t.income ? '' : 'background:rgba(255,255,255,.06);color:' + catColor(t.cat)}">
             ${t.income ? '入' : esc(t.cat[0])}</span>
           <div class="tx-main">
             <div class="tx-name">${esc(t.note)}</div>
@@ -3425,6 +3671,123 @@ const BG_CFG_KEY = 'kcb.bgcfg';
 
 const bgState = { preset: 'midnight', src: '', veil: 0.62, blur: 0 };
 
+
+/* ═══════════════ 图标：预设 / 自选 / 本地持久化 ═══════════════ */
+const ICON_KEY = 'kcb.icon';
+
+const ICON_PRESETS = {
+  pink: 'data:image/png;base64,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',
+  bars: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAIAAADajyQQAAAA3klEQVR42u3asQ3CMBAF0ATRAA0MwAYMQMsSbIGYBbEFS9AyABswAB01beTYESgIxc67zj9Nnk46ybnUs8WyKrEmVaEFBgYGBgYGBgYGBgYGBgY2ath0CC/xOm6ax/npXkLHAlU0yQ+WMvS3GR5gYNmO+/3t0TxetusSOhaookl+sJThnzbDAwxsYON+d34GyfWwyr5jbVUqzAnWARigzfAAAwMDAwMDAwMDGyGs40IZPEp9QmznqY1R/03Sdx2L2qJh25DStg0/2Y/V/uIGAwMDAwMDAwMDAwMDA/ug3tgXLd3/SBGRAAAAAElFTkSuQmCC',
+  book: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAIAAADajyQQAAABBElEQVR42u3bSwrDMAxFUVt4Wuisg0D2v66A99FZZoVi6TlCXC/A7kn8eQ5qf70/rWKzVrQBAwYMGDBgwBK24e9iziv8Zx3H6eyhO7OiQhXCW4dJSX7bSDJzfj21Oa+1zhff2D1wOClqFEs7CZ0jWqoZGNg/BzQwYMCAAQNW8z7mD0GKBGMZop0ifFqGwKqwsXmIF0z4MrMM1w3F5jESXqVYY8CAAQNWJARvOAyeCcEbPrk+FoLVNjaP6DClXmbPhOANmwchmDUGDBgwYMCA5YbdqUKd0HcXsLSsRSstvEhMV0u13LmrrG/DRXj5kZUtOer+P+3UrDDlHAMGDBgwYMCA/d++mRdRMaYFfiYAAAAASUVORK5CYII='
+};
+
+const iconState = { id: 'pink', src: '' };
+
+function iconSrc() {
+  if (iconState.id === 'own' && iconState.src) return iconState.src;
+  return ICON_PRESETS[iconState.id] || ICON_PRESETS.pink;
+}
+
+/** 写进 <link rel=icon / apple-touch-icon>：Safari「添加到主屏幕」会读这个 */
+function iconApply() {
+  const src = iconSrc();
+  [['icon', ''], ['apple-touch-icon', '']].forEach(([rel]) => {
+    let l = document.querySelector('link[rel="' + rel + '"]');
+    if (!l) {
+      l = document.createElement('link');
+      l.rel = rel;
+      document.head.appendChild(l);
+    }
+    l.href = src;
+  });
+}
+
+function iconSave() {
+  try {
+    localStorage.setItem(ICON_KEY, JSON.stringify({ id: iconState.id, src: iconState.src }));
+  } catch (e) {
+    toast('这张图太大，只留在本次打开期间');
+  }
+}
+
+function iconLoad() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ICON_KEY) || 'null');
+    if (raw && typeof raw.id === 'string') {
+      iconState.id = raw.id;
+      iconState.src = raw.src || '';
+    }
+  } catch (e) { /* 忽略 */ }
+  iconApply();
+}
+
+/** 自选图：裁成正方形压到 512，控制体积 */
+function iconReadFile(file) {
+  if (!file) return;
+  if (!/^image\//.test(file.type)) { toast('请选择图片文件'); return; }
+  const url = URL.createObjectURL(file);
+  const im = new Image();
+  im.onload = () => {
+    const S = 512;
+    const side = Math.min(im.width, im.height);
+    const cv = document.createElement('canvas');
+    cv.width = S; cv.height = S;
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(im, (im.width - side) / 2, (im.height - side) / 2, side, side, 0, 0, S, S);
+    let q = 0.9;
+    let data = cv.toDataURL('image/png');
+    if (data.length > 4.2e5) data = cv.toDataURL('image/jpeg', q);
+    while (data.length > 7.4e5 && q > 0.5) {
+      q -= 0.1;
+      data = cv.toDataURL('image/jpeg', q);
+    }
+    URL.revokeObjectURL(url);
+    iconState.id = 'own';
+    iconState.src = data;
+    iconApply();
+    iconSave();
+    const own = document.querySelector('.icon-sw[data-icon="own"]');
+    if (own) {
+      own.style.backgroundImage = 'url("' + data + '")';
+      own.classList.add('own');
+    }
+    document.querySelectorAll('#sheetBody .icon-sw').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.icon === 'own')));
+    toast('图标已换好 · 重新「添加到主屏幕」才会生效');
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); toast('这张图读不出来'); };
+  im.src = url;
+}
+
+function iconBlock() {
+  const items = [
+    ['pink', '粉色'],
+    ['bars', '三柱'],
+    ['book', '书页']
+  ];
+  let row = '';
+  items.forEach(([k, label]) => {
+    row += '<button class="icon-sw" type="button" data-icon="' + k + '" aria-pressed="' +
+      String(iconState.id === k) + '" style="background-image:url(\'' + ICON_PRESETS[k] + '\')">' +
+      '<span>' + label + '</span></button>';
+  });
+  const ownStyle = iconState.id === 'own' && iconState.src
+    ? ' style="background-image:url(\'' + iconState.src + '\')"' : '';
+  row += '<button class="icon-sw icon-sw-own' + (iconState.id === 'own' && iconState.src ? ' own' : '') +
+    '" type="button" data-icon="own"' + ownStyle + ' aria-pressed="' +
+    String(iconState.id === 'own') + '"><span>' + (iconState.src ? '我的' : '我的图') + '</span></button>';
+
+  return '<div class="icon-sec">' +
+    '<div class="icon-head"><b>图标</b><i>桌面图标在「添加/安装」那一刻固定，改完要重新添加</i></div>' +
+    '<div class="icon-row">' + row + '</div>' +
+    '<button class="bg-upload icon-upload" type="button" id="iconPick">' +
+      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+      '<rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3.6"/><path d="M4.4 16.6l4.5-4.2 3.4 3.1 2.9-2.7 4.4 4"/></svg>' +
+      '用自己的图片当图标</button>' +
+    '</div>';
+}
+
+
 function bgApply() {
   const phone = $('#phone');
   const layer = $('#bgLayer');
@@ -3528,7 +3891,7 @@ function openBg() {
     '<span>' + (bgState.src ? '我的' : '我的图') + '</span></button>';
   album += '</div>';
 
-  const body = album +
+  const body = iconBlock() + album +
     '<button class="bg-upload" type="button" id="bgPick">' +
       '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
       '<rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3.6"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M4.4 16.6l4.5-4.2 3.4 3.1 2.9-2.7 4.4 4"/></svg>' +
@@ -3541,14 +3904,29 @@ function openBg() {
     '<p class="bg-note">图片会缩到长边 1400px 后再存到本机，不上传任何服务器。遮罩调低能看清照片，调高文字更清楚。</p>';
 
   openSheet({
-    title: '背景',
-    sub: '换成预设光场或你自己的照片 —— 卡片是玻璃的，会把背景透出来',
+    title: '外观',
+    sub: '图标和背景都在这里换 —— 卡片是玻璃的，会把背景透出来',
     body,
     foot: '<button class="btn btn-primary" id="bgDone">完成</button>'
   });
 
   const pick = $('#bgPick');
   pick.onclick = () => $('#bgFile').click();
+
+  const ipick = $('#iconPick');
+  if (ipick) ipick.onclick = () => $('#iconFile').click();
+
+  $$('#sheetBody .icon-sw').forEach(b => {
+    b.onclick = () => {
+      const k = b.dataset.icon;
+      if (k === 'own' && !iconState.src) { toast('先点下面的按钮选一张图'); return; }
+      $$('#sheetBody .icon-sw').forEach(x => x.setAttribute('aria-pressed', 'false'));
+      b.setAttribute('aria-pressed', 'true');
+      iconState.id = k;
+      iconApply();
+      iconSave();
+    };
+  });
 
   $$('#sheetBody .bg-sw').forEach(b => {
     b.onclick = () => {
@@ -3616,6 +3994,11 @@ function bgWireDrop() {
 $('#bgFile').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
   if (f) bgReadFile(f);
+  e.target.value = '';
+});
+$('#iconFile').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  if (f) iconReadFile(f);
   e.target.value = '';
 });
 $('#qbtnBg').addEventListener('click', () => { qWake(); openBg(); });
@@ -4129,6 +4512,7 @@ function openDetail(id) {
     <div class="det-hero" style="--herotint:${hexA(col.base, 0.16)}">
       <div class="det-hero-top">
         <span class="pill" style="--ctint:${col.tint};--cink:${col.ink}">${s.n} 节</span>
+        <span class="wk-badge">第 ${c.w0 || 1}–${c.w1 || 16} 周</span>
         ${live
           ? `<span class="det-live"><i></i>进行中 · 剩 ${L.remain} 分钟</span>`
           : `<span class="det-live" style="color:var(--muted)">${hhmm(s.start)} – ${hhmm(s.end)}</span>`}
@@ -4161,19 +4545,36 @@ function openDetail(id) {
       </div>
     </section>
 
-    <div class="det-sec"><h3>课程信息</h3>
+    <div class="det-sec"><h3>课程信息<span class="det-hint">点一下就能改</span></h3>
       <div class="det-rows">
-        <div class="det-row-item"><span>课程代码</span><b>${(c.name.length * 137 % 900 + 100)}-${c.day}</b></div>
-        <div class="det-row-item"><span>上课时间</span><b>周${DAYN[c.day]} ${s.n} 节 · ${hhmm(s.start)}–${hhmm(s.end)}</b></div>
-        <div class="det-row-item"><span>地点</span><b>${esc(c.room)}</b></div>
-        <div class="det-row-item"><span>教师</span><b>${esc(c.teacher)}</b></div>
-        <div class="det-row-item"><span>考核方式</span><b>期末 60% · 平时 40%</b></div>
+        <div class="det-row-item"><span>上课时间</span>
+          <div class="det-edit-row">
+            <select id="detDay" aria-label="星期">${[1, 2, 3, 4, 5, 6, 7].map(d =>
+              `<option value="${d}"${d === c.day ? ' selected' : ''}>周${DAYN[d]}</option>`).join('')}</select>
+            <select id="detPeriod" aria-label="节次">${PERIODS.map((p, i) =>
+              `<option value="${i}"${i === c.p ? ' selected' : ''}>${p.n} 节</option>`).join('')}</select>
+          </div>
+        </div>
+        <div class="det-row-item"><span>地点</span>
+          <input class="det-input" id="detRoom" value="${esc(c.room)}" maxlength="12"
+            placeholder="填教室" autocomplete="off" spellcheck="false"></div>
+        <div class="det-row-item"><span>教师</span>
+          <input class="det-input" id="detTeacher" value="${esc(c.teacher)}" maxlength="10"
+            placeholder="填老师" autocomplete="off" spellcheck="false"></div>
+        <div class="det-row-item"><span>周次</span>
+          <div class="det-edit-row">
+            <input type="number" id="detW0" min="1" max="20" value="${c.w0 || 1}" aria-label="从第几周开始">
+            <em>–</em>
+            <input type="number" id="detW1" min="1" max="20" value="${c.w1 || 16}" aria-label="到第几周结束">
+            <em>周</em>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="det-sec"><h3>课程简介</h3>
-      <p class="det-intro">本课程围绕${esc(c.name)}的核心概念展开，每周两次课，配合课后习题与实验。
-        课程资料会随进度更新，缺勤记录同步到教务系统。</p>
+      <textarea class="det-textarea" id="detIntro" maxlength="220" spellcheck="false"
+        aria-label="课程简介，可直接编辑">${esc(c.intro || ('本课程围绕' + c.name + '的核心概念展开，每周两次课，配合课后习题与实验。'))}</textarea>
     </div>
 
     <div class="det-sec"><h3>课程资料</h3>
@@ -4205,13 +4606,20 @@ function openDetail(id) {
   $('#detail').classList.add('on');
   phone.classList.add('detail-open');
   $('#detScroll').scrollTop = 0;
-  requestAnimationFrame(() => $('#detBack').focus({ preventScroll: true }));
+  /* 聚焦面板本身而不是「返回」按钮：后者会画出焦点环，看起来像选中态 */
+  requestAnimationFrame(() => $('#detail').focus({ preventScroll: true }));
   announce(`${c.name} 课程资料`);
 }
 
 function closeDetail() {
   const el = $('#detail');
   if (!el.classList.contains('on')) return;
+  /* 草稿课程没填名字就走人：别在课表里留一条空记录 */
+  const draft = courses.find(x => x.id === state.openId);
+  if (draft && draft.__draft && !String(draft.name || '').trim()) {
+    courses = courses.filter(x => x !== draft);
+    renderCourseAll();
+  }
   el.classList.remove('on', 'drag');
   el.style.transform = '';
   phone.classList.remove('detail-open');
@@ -4223,10 +4631,24 @@ $('#detBack').addEventListener('click', closeDetail);
 $('#detSave').addEventListener('click', () => {
   const c = courses.find(x => x.id === state.openId);
   if (!c) return;
-  const name = $('#detName').value.trim();
-  if (name) c.name = name;
+  const name = ($('#detName').value || '').trim();
+  if (!name) { toast('课程名不能为空'); $('#detName').focus(); return; }
+  let w0 = Math.round(+$('#detW0').value || 1);
+  let w1 = Math.round(+$('#detW1').value || 16);
+  w0 = Math.min(20, Math.max(1, w0));
+  w1 = Math.min(20, Math.max(1, w1));
+  if (w1 < w0) { const tmp = w0; w0 = w1; w1 = tmp; }
+  c.name = name;
+  c.room = ($('#detRoom').value || '').trim();
+  c.teacher = ($('#detTeacher').value || '').trim();
+  c.day = +$('#detDay').value;
+  c.p = +$('#detPeriod').value;
+  c.w0 = w0;
+  c.w1 = w1;
+  c.intro = ($('#detIntro').value || '').trim();
   c.remind = detRemind;
-  toast(`已保存 · 提前 ${c.remind} 分钟提醒`);
+  delete c.__draft;
+  toast(`已保存 · 第 ${w0}–${w1} 周`);
   announce(`已保存 ${c.name}`);
   closeDetail();
   renderCourseAll();
@@ -4235,7 +4657,24 @@ $('#detTest').addEventListener('click', () => {
   const c = courses.find(x => x.id === state.openId);
   if (c) showBanner(c, c.remind);
 });
-$('#detMore').addEventListener('click', () => toast('导出 / 分享 / 删除：原型未实现'));
+$('#detMore').addEventListener('click', () => {
+  const c = courses.find(x => x.id === state.openId);
+  if (!c) return;
+  if (menuOpen && menuOpen()) { hideMenu(); return; }
+  showMenu($('#detMore'), [
+    { label: '删除这门课', act: 'del', icon: 'trash', danger: 1 }
+  ], act => {
+    if (act !== 'del') return;
+    const i = courses.indexOf(c);
+    if (i >= 0) courses.splice(i, 1);
+    closeDetail();
+    renderCourseAll();
+    toast(`已删除「${c.name}」`, {
+      label: '撤销',
+      onClick: () => { courses.push(c); renderCourseAll(); toast('已恢复'); }
+    });
+  });
+});
 
 /* 资料页下拉关闭 */
 let detDrag = null;
@@ -4442,6 +4881,7 @@ $('#week').addEventListener('click', e => {
 function init() {
   loadState();
   bgLoad();
+  iconLoad();
   tickClock();
   setInterval(tickClock, 10000);
   renderCourseAll();
@@ -4615,6 +5055,287 @@ function exportICS() {
   } catch (err) {
     toast('导出失败：' + err.message);
   }
+}
+/* ═══════════════════════════════════════════════════
+   v2 交互：通用长按/点按菜单（记账 · 待办 · 课程删除）
+   ═══════════════════════════════════════════════════ */
+
+/* ── 新建课程：先塞一张草稿，用户不填就直接关掉 ── */
+function openCourseNew() {
+  const c = {
+    id: 'c' + Date.now(),
+    name: '', day: state.day, p: 0, room: '', teacher: '',
+    color: (uid++) % COLORS.length, remind: state.remindDefault || 15,
+    w0: 1, w1: 16, __draft: true
+  };
+  courses.push(c);
+  openDetail(c.id);
+  setTimeout(() => { const n = $('#detName'); if (n) n.focus({ preventScroll: true }); }, 320);
+}
+
+/* ── 课程表空态里的两个按钮 ── */
+$('#deck').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  if (b.dataset.act === 'import') openImport();
+  if (b.dataset.act === 'new-course') openCourseNew();
+});
+
+/* ── 待办 / 账本空态 ── */
+$('#todoGroups').addEventListener('click', e => {
+  if (e.target.closest('[data-act="empty-add"]')) openAddTodo();
+});
+$('#txList').addEventListener('click', e => {
+  if (e.target.closest('[data-act="add-tx"]')) openTx();
+});
+
+/* ═══════════════ 通用弹出菜单 ═══════════════ */
+const MI = {
+  rename: '<path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0 0-3l-1.2-1.2a2.1 2.1 0 0 0-3 0L4 15.8z"/>',
+  trash: '<path d="M4 7h16M9.5 7V4.6h5V7M6.6 7l.9 12.1h9l.9-12.1M10.4 10.6v5.4M13.6 10.6v5.4"/>',
+  cal: '<rect x="3.6" y="5.2" width="16.8" height="15" rx="3"/><path d="M8 3.4v3.4M16 3.4v3.4M3.6 10.2h16.8"/>'
+};
+
+let menuPick = null;
+
+function actMenuEl() {
+  let m = $('#actMenu');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'actMenu';
+    m.className = 'tx-menu';
+    m.setAttribute('role', 'menu');
+    phone.appendChild(m);
+    m.addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      const fn = menuPick;
+      const act = b.dataset.act;
+      hideMenu();
+      if (fn) fn(act);
+    });
+  }
+  return m;
+}
+
+/** anchor：元素或矩形；items：[{label, act, icon, danger}] */
+function showMenu(anchor, items, onPick) {
+  const m = actMenuEl();
+  menuPick = onPick || null;
+  m.innerHTML = items.map(it => `<button type="button" data-act="${it.act}" role="menuitem"
+      ${it.danger ? 'data-danger="1"' : ''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MI[it.icon] || ''}</svg>${it.label}</button>`).join('');
+  m.querySelectorAll('[data-danger]').forEach(b => b.setAttribute('data-danger', '1'));
+
+  const pr = phone.getBoundingClientRect();
+  const r = anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : anchor;
+  m.classList.remove('out', 'on');
+  m.style.left = '0px';
+  m.style.top = '0px';
+  void m.offsetWidth;
+
+  const mw = m.offsetWidth, mh = m.offsetHeight, gap = 9;
+  /* 靠右的元素右对齐，否则居中；再夹进手机框 */
+  let left = r.left - pr.left + r.width / 2 - mw / 2;
+  left = Math.max(10, Math.min(left, pr.width - mw - 10));
+  /* 锚点在上半屏就往下弹，下半屏往上弹 */
+  let below = (r.top - pr.top) < pr.height * 0.62;
+  let top = below ? (r.bottom - pr.top + gap) : (r.top - pr.top - mh - gap);
+  if (top + mh > pr.height - 10) { below = false; top = r.top - pr.top - mh - gap; }
+  if (top < 8) { below = true; top = r.bottom - pr.top + gap; }
+
+  m.style.left = left + 'px';
+  m.style.top = top + 'px';
+  m.style.transformOrigin = below ? '50% 0%' : '50% 100%';
+  m.classList.add('on');
+}
+
+function hideMenu() {
+  const m = $('#actMenu');
+  menuPick = null;
+  if (!m || !m.classList.contains('on')) return;
+  m.classList.remove('on');
+  m.classList.add('out');
+  setTimeout(() => m.classList.remove('out'), 200);
+}
+const menuOpen = () => {
+  const m = $('#actMenu');
+  return !!m && m.classList.contains('on');
+};
+
+document.addEventListener('pointerdown', e => {
+  if (!menuOpen()) return;
+  if (e.target.closest('#actMenu')) return;
+  hideMenu();
+}, true);
+window.addEventListener('scroll', () => { if (menuOpen()) hideMenu(); }, true);
+$('#scrim').addEventListener('pointerdown', hideMenu);
+
+/* ═══════════════ 长按工具 ═══════════════ */
+const LP_MS = 430;
+let lp = null;
+
+function bindLongPress(hostSel, itemSel, onLong) {
+  const host = $(hostSel);
+  if (!host) return;
+  host.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || menuOpen()) return;
+    const item = e.target.closest(itemSel);
+    if (!item) return;
+    if (e.target.closest('button, input, a')) return;   /* 按钮上的按压交给按钮 */
+    lp = { item, x: e.clientX, y: e.clientY, done: false, timer: null };
+    const self = lp;
+    self.timer = setTimeout(() => {
+      if (lp !== self) return;
+      self.done = true;
+      self.item.classList.add('pressing');
+      setTimeout(() => self.item.classList.remove('pressing'), 140);
+      if (navigator.vibrate) navigator.vibrate(9);
+      onLong(self.item);
+    }, LP_MS);
+  });
+  const cancel = e => {
+    if (!lp) return;
+    clearTimeout(lp.timer);
+    lp.item.classList.remove('pressing');
+    lp = null;
+  };
+  host.addEventListener('pointermove', e => {
+    if (!lp) return;
+    if (Math.abs(e.clientX - lp.x) > 9 || Math.abs(e.clientY - lp.y) > 9) cancel();
+  });
+  host.addEventListener('pointerup', cancel);
+  host.addEventListener('pointercancel', cancel);
+  host.addEventListener('pointerleave', cancel);
+}
+
+/* ═══════════════ 账本：长按改名 / 删除 ═══════════════ */
+bindLongPress('#txList', '.tx-card', card => {
+  const t = txs.find(x => x.id === card.dataset.tx);
+  if (!t) return;
+  showMenu(card, [
+    { label: '重命名', act: 'rename', icon: 'rename' },
+    { label: '删除', act: 'del', icon: 'trash', danger: 1 }
+  ], act => {
+    if (act === 'rename') renameTx(t);
+    else deleteTx(t);
+  });
+});
+
+function renameTx(t) {
+  openSheet({
+    title: '改个名字',
+    sub: '只改备注，金额和分类不变',
+    body: `<label class="field"><span>备注</span>
+        <input class="ipt" id="rnInput" value="${esc(t.note)}" maxlength="20"
+          autocomplete="off" spellcheck="false" data-autofocus></label>`,
+    foot: `<button class="btn btn-ghost" type="button" id="rnCancel">取消</button>
+      <button class="btn btn-primary" type="button" id="rnSave">保存</button>`
+  });
+  const inp = $('#rnInput');
+  inp.focus({ preventScroll: true });
+  inp.select();
+  const save = () => {
+    const v = inp.value.trim();
+    if (!v) { toast('名字不能为空'); return; }
+    const old = t.note;
+    t.note = v;
+    closeSheet();
+    renderLedger();
+    toast(`已改名为「${v}」`, {
+      label: '撤销',
+      onClick: () => { t.note = old; renderLedger(); toast('已还原'); }
+    });
+  };
+  $('#rnSave').onclick = save;
+  $('#rnCancel').onclick = closeSheet;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
+}
+
+function deleteTx(t) {
+  const card = $('#txList').querySelector(`.tx-card[data-tx="${t.id}"]`);
+  const drop = () => {
+    const i = txs.indexOf(t);
+    if (i >= 0) txs.splice(i, 1);
+    renderLedger();
+    toast(`已删除「${t.note}」`, {
+      label: '撤销',
+      onClick: () => { txs.push(t); renderLedger(); toast('已恢复'); }
+    });
+  };
+  if (card && !RM) {
+    card.classList.add('removing');
+    setTimeout(drop, 220);
+  } else drop();
+}
+
+/* ═══════════════ 待办：长按改名 / 删除 ═══════════════ */
+bindLongPress('#todoGroups', '.task', row => {
+  const t = todos.find(x => x.id === row.dataset.id);
+  if (!t) return;
+  showMenu(row, [
+    { label: '重命名', act: 'rename', icon: 'rename' },
+    { label: '删除', act: 'del', icon: 'trash', danger: 1 }
+  ], act => {
+    if (act === 'rename') renameTodo(t);
+    else deleteTodo(t);
+  });
+});
+
+function renameTodo(t) {
+  openSheet({
+    title: '改个名字',
+    sub: '时间、标签都不动',
+    body: `<label class="field"><span>要做什么</span>
+        <input class="ipt" id="rnInput" value="${esc(t.text)}" maxlength="24"
+          autocomplete="off" spellcheck="false" data-autofocus></label>`,
+    foot: `<button class="btn btn-ghost" type="button" id="rnCancel">取消</button>
+      <button class="btn btn-primary" type="button" id="rnSave">保存</button>`
+  });
+  const inp = $('#rnInput');
+  inp.focus({ preventScroll: true });
+  inp.select();
+  const save = () => {
+    const v = inp.value.trim();
+    if (!v) { toast('名字不能为空'); return; }
+    const old = t.text;
+    t.text = v;
+    closeSheet();
+    renderTodos();
+    toast(`已改名为「${v}」`, {
+      label: '撤销',
+      onClick: () => { t.text = old; renderTodos(); toast('已还原'); }
+    });
+  };
+  $('#rnSave').onclick = save;
+  $('#rnCancel').onclick = closeSheet;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
+}
+
+function deleteTodo(t) {
+  const row = $('#todoGroups').querySelector(`.task[data-id="${t.id}"]`);
+  const drop = () => {
+    const i = todos.indexOf(t);
+    if (i >= 0) todos.splice(i, 1);
+    renderTodos();
+    toast(`已删除「${t.text}」`, {
+      label: '撤销',
+      onClick: () => { todos.push(t); renderTodos(); toast('已恢复'); }
+    });
+  };
+  if (row && !RM) {
+    const h = row.offsetHeight;
+    row.style.overflow = 'hidden';
+    const anim = row.animate(
+      [{ height: h + 'px', opacity: 1, marginBottom: '9px' },
+       { height: '0px', opacity: 0, marginBottom: '0px' }],
+      { duration: 260, easing: 'cubic-bezier(.32,.86,.28,1)', fill: 'forwards' });
+    let done = false;
+    const fin = () => { if (done) return; done = true; drop(); };
+    anim.onfinish = fin;
+    setTimeout(fin, 400);
+  } else drop();
 }
 
 </script>
